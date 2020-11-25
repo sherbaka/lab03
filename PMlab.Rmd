@@ -1,0 +1,135 @@
+---
+title: "PMLab"
+author: "ArielleSherbak"
+date: "8/14/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+##All the packages essential to running my code, there might even be some that I never use, but most of them are needed and they are here:
+
+library(tidyverse)
+library(readr)
+library(openair)
+library(lubridate)
+
+```
+
+
+```{r}
+clinton <- read_csv("~/Desktop/clinton.csv")
+woodstock <- read_csv("~/Desktop/Woodstock.csv")
+woodstocknotime <- read_csv("~/Desktop/Woodstocknotime.csv")
+clintonnotime <- read_csv("~/Desktop/clintonnotime.csv")
+
+##melt
+```
+
+
+
+```{r}
+##playing around w data
+clintonS17 <- clinton %>%
+dplyr::select(S17pm01_const,S17pm01_const,S17pm10_const, S17pm01_bike, S17pm25_bike,  S17pm10_bike,S17pm01_ped, S17pm25_ped, S17pm10_ped) 
+
+##clintonS17$Time <- 1:nrow(clintonS17)
+clintonS17two<-melt(clintonS17)
+```
+
+```{r}
+
+##some plots
+ggplot(data = clintonS17two, 
+       mapping = aes(x = variable,
+                     y = value,
+                      fill = variable)) +
+  geom_boxplot()+
+  labs(
+    title = "The Title",
+    subtitle = "The smaller title if you want one",
+    caption = "always site ur sources, can do that here",
+    x = "Month",
+    y = "PM 2.5"
+  ) +
+    theme_bw()
+
+```
+
+
+```{r}
+
+##Data wrangling
+woodstocktime <- read_csv("~/Desktop/Woodstocknotime.csv")
+clintontime <- read_csv("~/Desktop/clintonnotime.csv")
+
+woodstocktime$Time <- 1:nrow(woodstocktime)
+clintontime$Time <- 1:nrow(clintontime)
+
+meltclinton <- melt(clintontime, id.vars = c("Time"),
+  variable.name = "Sensor", 
+  value.name = "Value")
+
+meltwoodstock <- melt(woodstocktime, id.vars = c("Time"),
+  variable.name = "Sensor", 
+  value.name = "Value")
+
+
+meltwoodstock <-meltwoodstock%>%
+ separate(Sensor, c("Sensor", "PM", "Location"))
+meltclinton <-meltclinton%>%
+ separate(Sensor, c("Sensor", "PM", "Location"))
+
+fieldday=full_join(meltwoodstock,meltclinton,by=c("Sensor", "PM", "Location", "Value", "Time"))
+
+
+```
+
+```{r}
+
+##more plots
+ggplot(data=meltwoodstocknotime, 
+       mapping = aes(y = value,
+                     x = Location, 
+                     fill = PM), 
+ position='fill')+
+
+  geom_boxplot()+
+ facet_wrap(~Sensor, scales ="free_y")+
+theme_bw( )+
+  xlab(" ")+
+ ylab ("PM[ ]")
+
+
+ggplot(data=fieldday, 
+       mapping = aes(y = value,
+                     x = Location, 
+                     fill = value), 
+ position='fill')+
+
+  geom_boxplot()+
+ facet_wrap(~Sensor, scales ="free_y")+
+theme_bw( )+
+  xlab(" ")+
+ ylab ("PM[ ]")
+
+
+```
+
+
+```{r}
+
+##Michaels Data
+pm2.5 <- c(24.96,16.86,2.93,6.39,19.70,16.85,2.73,10.19,22.89,16.82,2.85,6.16,18.36,27.15,2.69,13.04,22.93,20.56,3.27,11.94,20.15,22.71,2.63,13.92)
+sub_location <- c("const","const","const","const","bike","bike","bike","bike","ped","ped","ped","ped","fire","fire","fire","fire","lib","lib","lib","lib","martin","martin","martin","martin")
+time_of_day <- c('morning', 'midday', 'afternoon', 'evening','morning', 'midday', 'afternoon', 'evening','morning', 'midday', 'afternoon', 'evening','morning', 'midday', 'afternoon', 'evening','morning', 'midday', 'afternoon', 'evening','morning', 'midday', 'afternoon', 'evening')
+data_2.5 <- data.frame(pm2.5, sub_location, time_of_day)
+ggplot(data_2.5, aes(x= factor(time_of_day, level = c('morning', 'midday', 'afternoon', 'evening')), y=pm2.5, color= sub_location)) +
+  geom_line(aes(group = sub_location))
+```
+
+
+
